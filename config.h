@@ -1,67 +1,39 @@
 #pragma once
 
-#include "config_common.h"
+#define NO_MUSIC_MODE
 
-/* USB Device descriptor parameter */
-#define VENDOR_ID       0x4B53  // "KS" for Kasep
-#define PRODUCT_ID      0x4841  // "HA" for HD48AP
-#define DEVICE_VER      0x0001
-#define MANUFACTURER    Kasep
-#define PRODUCT         HD48AP
+// Matrix size - Defines grid; used in matrix.c for scanning loops and hd48ap.h for layout macro
+#define MATRIX_ROWS 4
+#define MATRIX_COLS 12
 
-/* key matrix size - Using 8x6 to handle your weird matrix */
-#define MATRIX_ROWS 8
-#define MATRIX_COLS 6
+// Charlieplex pins - Array of your 14 pins (AVR names from Pro Micro pinout); used in matrix.c for scanning
+#define NUM_PINS 14
 
-/* Since your matrix is completely custom, we need custom matrix */
-#define CUSTOM_MATRIX
+// Diode direction - COL2ROW means diodes point column to row; used in matrix.c for reading logic (test with multimeter if keys reverse)
+#define DIODE_DIRECTION COL2ROW  // Adjust to ROW2COL if tests show swapped
 
-/* Rotary Encoder */
-#define ENCODERS_PAD_A { D4 }
-#define ENCODERS_PAD_B { D5 }
-#define ENCODER_RESOLUTION 4
+// OLED pins - Standard I2C; used by QMK OLED driver (relates to oled_task_user() in keymap.c)
+#define I2C1_SDA_PIN D1
+#define I2C1_SCL_PIN D0
 
-/* OLED Display */
-#define OLED_DISPLAY_128X64
-#define OLED_DISPLAY_WIDTH 128
-#define OLED_DISPLAY_HEIGHT 64
-#define OLED_TIMEOUT 60000
-#define OLED_BRIGHTNESS 128
+// Encoder pins - Your CLK/DT; used in encoder_update_user() in keymap.c
+//#define ENCODERS_PAD_A { D4 }  // CLK
+//#define ENCODERS_PAD_B { D5 }  // DT
+//#define ENCODER_RESOLUTION 4  // Steps per click; adjust for sensitivity
 
-/* I2C for OLED (SDA=D1/pin2, SCL=D0/pin3 based on your pinout) */
-#define I2C1_SCL_PIN        D0  // Pin 3
-#define I2C1_SDA_PIN        D1  // Pin 2
-#define I2C_DRIVER I2CD1
+// Mousekey config - Defaults; enables movement/click/scroll (use in keymap with MOUSEKEY_ON/OFF or assign to keys)
+#define MOUSEKEY_INTERVAL 20     // Update interval (ms)
+#define MOUSEKEY_DELAY 0         // Delay before movement
+#define MOUSEKEY_TIME_TO_MAX 60  // Time to reach max speed
+#define MOUSEKEY_MAX_SPEED 7     // Max cursor speed
+#define MOUSEKEY_WHEEL_DELAY 0   // Wheel scroll delay
 
-/* Mouse keys */
-#define MOUSEKEY_ENABLE
-#define MOUSEKEY_INTERVAL 16
-#define MOUSEKEY_DELAY 0
-#define MOUSEKEY_TIME_TO_MAX 60
-#define MOUSEKEY_MAX_SPEED 7
-#define MOUSEKEY_WHEEL_DELAY 0
-#define MOUSEKEY_WHEEL_INTERVAL 50
-#define MOUSEKEY_WHEEL_MAX_SPEED 8
-#define MOUSEKEY_WHEEL_TIME_TO_MAX 40
+// OLED menu - Global for modes; used in keymap.c for encoder switching and oled_task_user()
+#define MENU_MODES 5  // 0: images, 1: Layer 0, 2: Layer 1, 3: Layer 2, 4: Layer 3
 
-/* Vial-specific config */
-#define VIAL_KEYBOARD_UID {0x11, 0x08, 0x60, 0x90, 0x23, 0x14, 0x10, 0x23}
-#define VIAL_UNLOCK_COMBO_ROWS { 0, 2 }
-#define VIAL_UNLOCK_COMBO_COLS { 0, 11 }
-
-/* WPM calculation for animations */
-#define WPM_ENABLE
-#define WPM_LAUNCH_CONTROL
-#define WPM_ALLOW_COUNT_REGRESSION
-
-/* Animation settings */
-#define OLED_UPDATE_INTERVAL 50
-#define BONGOCAT_WPM_THRESHOLD 20
-
-/* Debounce reduces chatter (unintended double-presses) - set 0 if debouncing is not needed */
-#define DEBOUNCE 5
-
-/* Mechanical locking support. Use KC_LCAP, KC_LNUM or KC_LSCR instead in keymap */
-#define LOCKING_SUPPORT_ENABLE
-/* Locking resynchronize hack */
-#define LOCKING_RESYNC_ENABLE
+#ifndef NO_DEBUG
+#define NO_DEBUG
+#endif // !NO_DEBUG
+#if !defined(NO_PRINT) && !defined(CONSOLE_ENABLE)
+#define NO_PRINT
+#endif // !NO_PRIN

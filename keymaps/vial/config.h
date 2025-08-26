@@ -1,27 +1,7 @@
 #pragma once
 
-// Vial specific configuration
-#define VIAL_KEYBOARD_UID {0x11, 0x08, 0x60, 0x90, 0x23, 0x14, 0x10, 0x23}
+// Prevent multiple inclusion of this config during compilation
+#define VIAL_KEYBOARD_UID {0x99, 0xD9, 0xB4, 0x54, 0x2F, 0x22, 0x8F, 0x66} // Unique 8-byte identifier so Vial can detect this keyboard
 
-// Security
-#define VIAL_UNLOCK_COMBO_ROWS { 0, 2 }
-#define VIAL_UNLOCK_COMBO_COLS { 0, 11 }
-
-// Enable Vial features
-#define VIAL_ENABLE
-#define VIAL_INSECURE
-
-// OLED configuration
-#define OLED_DISPLAY_128X64
-#define OLED_TIMEOUT 60000
-
-// Animation settings
-#define BONGOCAT_WPM_THRESHOLD 20
-#define OLED_UPDATE_INTERVAL 50
-
-// Screen modes
-typedef enum {
-    SCREEN_BONGOCAT,
-    SCREEN_SYSTEM_INFO,
-    SCREEN_MAX
-} screen_mode_t;
+#define VIAL_UNLOCK_COMBO_ROWS {0, 0} // Unlock combo row positions (row 0 for both keys)
+#define VIAL_UNLOCK_COMBO_COLS {0, 1} // Unlock combo col positions (col 0 + col 1 on row 0 must be pressed together)
