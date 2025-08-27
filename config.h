@@ -1,39 +1,38 @@
 #pragma once
 
+// Disable music mode completely to save flash
 #define NO_MUSIC_MODE
 
-// Matrix size - Defines grid; used in matrix.c for scanning loops and hd48ap.h for layout macro
-#define MATRIX_ROWS 4
-#define MATRIX_COLS 12
+// Matrix configuration - 6 columns x 8 rows as per PCB layout
+// Uses standard QMK matrix scanning instead of custom charlieplexing
+#define MATRIX_ROWS 8
+#define MATRIX_COLS 6
 
-// Charlieplex pins - Array of your 14 pins (AVR names from Pro Micro pinout); used in matrix.c for scanning
-#define NUM_PINS 14
+// OLED display configuration - Force 128x64 and correct rotation
+#define I2C1_SDA_PIN D1  // Standard I2C SDA pin for Pro Micro
+#define I2C1_SCL_PIN D0  // Standard I2C SCL pin for Pro Micro
+#define OLED_DISPLAY_128X64  // Force 128x64 resolution (not 128x32)
 
-// Diode direction - COL2ROW means diodes point column to row; used in matrix.c for reading logic (test with multimeter if keys reverse)
-#define DIODE_DIRECTION COL2ROW  // Adjust to ROW2COL if tests show swapped
+// Performance optimizations for fast typing response
+#define DEBOUNCE 5          // Standard debounce timing (ms) - good balance of speed/stability
+#define USB_POLLING_INTERVAL_MS 1  // 1000Hz USB polling for minimal input latency
+#define QUICK_TAP_TERM 0    // Disable tap-hold quick tap for faster layer switching
 
-// OLED pins - Standard I2C; used by QMK OLED driver (relates to oled_task_user() in keymap.c)
-#define I2C1_SDA_PIN D1
-#define I2C1_SCL_PIN D0
+// WPM tracking configuration
+#define WPM_LAUNCH_CONTROL  // Enable WPM launch control features
+#define WPM_ALLOW_COUNT_REGRESSION  // Allow WPM to decrease naturally
 
-// Encoder pins - Your CLK/DT; used in encoder_update_user() in keymap.c
-//#define ENCODERS_PAD_A { D4 }  // CLK
-//#define ENCODERS_PAD_B { D5 }  // DT
-//#define ENCODER_RESOLUTION 4  // Steps per click; adjust for sensitivity
+// Menu system for OLED encoder navigation
+// 0: Main (animated + stats), 1-6: Layer displays (layers 0-2, left/right split)
+#define MENU_MODES 7
 
-// Mousekey config - Defaults; enables movement/click/scroll (use in keymap with MOUSEKEY_ON/OFF or assign to keys)
-#define MOUSEKEY_INTERVAL 20     // Update interval (ms)
-#define MOUSEKEY_DELAY 0         // Delay before movement
-#define MOUSEKEY_TIME_TO_MAX 60  // Time to reach max speed
-#define MOUSEKEY_MAX_SPEED 7     // Max cursor speed
-#define MOUSEKEY_WHEEL_DELAY 0   // Wheel scroll delay
+// Encoder configuration for different layer behaviors
+// Layer 0: Volume control, Layer 1: Brightness control, Layer 2: Reserved for future use
+#define ENCODER_RESOLUTION 4  // 4 pulses per detent for standard rotary encoder
 
-// OLED menu - Global for modes; used in keymap.c for encoder switching and oled_task_user()
-#define MENU_MODES 5  // 0: images, 1: Layer 0, 2: Layer 1, 3: Layer 2, 4: Layer 3
+// Last key pressed tracking for OLED display
+#define LAST_KEY_BUFFER_SIZE 16  // Store last 16 characters for display
 
-#ifndef NO_DEBUG
-#define NO_DEBUG
-#endif // !NO_DEBUG
-#if !defined(NO_PRINT) && !defined(CONSOLE_ENABLE)
-#define NO_PRINT
-#endif // !NO_PRIN
+// Personal best WPM tracking (resets on power cycle)
+// Will be stored in RAM, not EEPROM to avoid wear
+#define WPM_PERSONAL_BEST_ENABLE

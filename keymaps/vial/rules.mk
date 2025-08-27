@@ -1,2 +1,0 @@
-VIA_ENABLE = no
-VIAL_ENABLE = no
