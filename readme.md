@@ -58,6 +58,10 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | KC_LSFT | KC_Z   | KC_X   | KC_C   | KC_V   | KC_B   | KC_N   | KC_M   | KC_COMM| KC_DOT | KC_SLSH| KC_ENT  |
 | KC_LGUI | MO(2)  | MO(1)  | KC_LCTL| KC_LALT| KC_SPC | KC_SPC | MO(1)  | MO(2)  | KC_APP | blank  | blank   |
 
+## Customizing the images/animations
+convert images/gif each frame to 64x64 to bytes array with [image2cpp](https://javl.github.io/image2cpp/)
+and replace the array in `keymap.c`
+
 ## Bootloader
 
 * **Physical reset button**: Briefly press the button on the back of the PCB - some may have pads you must short instead
