@@ -1,9 +1,17 @@
 #include QMK_KEYBOARD_H
 
+// Custom keycodes for menu navigation
+enum custom_keycodes {
+    MENU_PREV = SAFE_RANGE,
+    MENU_NEXT
+};
+
 // Global variables for OLED menu system and statistics
 uint8_t menu_mode = 0;           // Current menu mode (0-6)
 uint16_t wpm_personal_best = 0;  // Personal best WPM (resets on power cycle)
 char last_keycode_str[16] = "   "; // Last pressed key as string for display
+static uint32_t first_keypress_time = 0; // Timer for first keypress
+static bool wpm_tracking_started = false; // Flag for initial WPM tracking
 
 // Layer definitions matching the PCB layout (6 columns x 8 rows)
 // Each layer maps to the physical switch matrix as defined in keyboard.json
@@ -13,7 +21,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
         KC_ESC,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_ENT,
-        KC_LGUI, MO(2),   MO(1),   KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  MO(1),   MO(2),   KC_APP,  KC_NO,   KC_NO
+        KC_LGUI, MO(2),   MO(1),   KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  MO(1),   MO(2),   KC_APP,  MENU_PREV, MENU_NEXT
     ),
 
     // Layer 1: Numbers, navigation, and symbols
@@ -75,7 +83,26 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 
 // Key press tracking for OLED display
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case MENU_NEXT:
+            if (record->event.pressed) {
+                menu_mode = (menu_mode + 1) % MENU_MODES;
+            }
+            return false;
+        case MENU_PREV:
+            if (record->event.pressed) {
+                menu_mode = (menu_mode == 0 ? MENU_MODES - 1 : menu_mode - 1);
+            }
+            return false;
+    }
+
     if (record->event.pressed) {
+        // Start WPM tracking timer on first keypress
+        if (!wpm_tracking_started) {
+            first_keypress_time = timer_read32();
+            wpm_tracking_started = true;
+        }
+
         // Convert keycode to string for display
         switch (keycode) {
             case KC_A ... KC_Z:
@@ -107,26 +134,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
         }
 
-        // Update personal best WPM
-        uint8_t current_wpm = get_current_wpm();
-        if (current_wpm > wpm_personal_best) {
-            wpm_personal_best = current_wpm;
+        // Set initial Dunk initial personal best WPM after 30 seconds from first keypress
+        if (wpm_tracking_started && timer_elapsed32(first_keypress_time) >= 30000 && wpm_personal_best == 0) {
+            wpm_personal_best = get_current_wpm();
         }
-    }
-
-    // Check for OLED menu switching on Layer 0 only
-    if (record->event.pressed && get_highest_layer(layer_state) == 0) {
-        // B3+B5 combination (MO(2) + blank key positions)
-        if ((keycode == MO(2) && (keyboard_report->mods & MOD_BIT(KC_LGUI))) ||
-            (keycode == KC_LGUI && (layer_state & (1 << 2)))) {
-            menu_mode = (menu_mode + 1) % MENU_MODES;
-            return false;
-        }
-        // B3+B4 combination (MO(2) + MO(1))
-        if ((keycode == MO(2) && (layer_state & (1 << 1))) ||
-            (keycode == MO(1) && (layer_state & (1 << 2)))) {
-            menu_mode = (menu_mode - 1 + MENU_MODES) % MENU_MODES;
-            return false;
+        // Update personal best WPM normally after initial set
+        else if (wpm_tracking_started) {
+            uint8_t current_wpm = get_current_wpm();
+            if (current_wpm > wpm_personal_best) {
+                wpm_personal_best = current_wpm;
+            }
         }
     }
 
@@ -324,11 +341,18 @@ static const char PROGMEM image_frames[][512] = {
 
 // OLED display task - Shows different content based on menu_mode
 bool oled_task_user(void) {
+    static uint8_t prev_menu_mode = 255; // Initial invalid value to force clear on start
+
+    if (menu_mode != prev_menu_mode) {
+        oled_clear(); // Clear the display buffer on menu mode change to avoid leftovers
+        prev_menu_mode = menu_mode;
+    }
+
     if (menu_mode == 0) {
         // Main menu: Animated (left 64px) + stats (right 64px)
         static uint8_t current_frame = 0;
         static uint32_t last_frame_time = 0;
-        const uint32_t frame_interval = 200; // 200ms per frame
+        const uint32_t frame_interval = 100; // 100ms per frame
 
         // Update animation frame
         if (timer_elapsed32(last_frame_time) > frame_interval) {
@@ -336,109 +360,116 @@ bool oled_task_user(void) {
             last_frame_time = timer_read32();
         }
 
-        // Draw animated on left side (64x64)
-        oled_write_raw_P(image_frames[current_frame], 512);
+        // Draw animated on left side (64x64) page by page
+        for (uint8_t page = 0; page < 8; page++) {
+            oled_set_cursor(0, page);
+            oled_write_raw_P(image_frames[current_frame] + (page * 64), 64);
+        }
 
-        // Position cursor for right side stats (column 8, which is 64 pixels over)
-        oled_set_cursor(8, 0);
-
-        // Display stats on right side in the specified format
-        oled_write_P(PSTR("                    \n"), false);
-
-        // Personal best with formatting
-        oled_set_cursor(8, 1);
-        char pb_str[21];
-        snprintf(pb_str, sizeof(pb_str), "              B:%03d \n", wpm_personal_best);
-        oled_write(pb_str, false);
-
-        // Current WPM with white background (inverse)
-        oled_set_cursor(8, 2);
-        char wpm_str[21];
-        snprintf(wpm_str, sizeof(wpm_str), "             wpm:%03d\n", get_current_wpm());
-        oled_write(wpm_str, true); // true for inverse (white bg, black text)
-
-        // Empty line
-        oled_set_cursor(8, 3);
-        oled_write_P(PSTR("                    \n"), false);
-
-        // Last key pressed
-        oled_set_cursor(8, 4);
-        char key_str[21];
-        snprintf(key_str, sizeof(key_str), "             %s\n", last_keycode_str);
-        oled_write(key_str, false);
-
-        // Current layer
-        oled_set_cursor(8, 5);
-        char layer_str[21];
-        snprintf(layer_str, sizeof(layer_str), "             Layer%d \n", get_highest_layer(layer_state));
-        oled_write(layer_str, false);
-
-        // Empty lines
-        oled_set_cursor(8, 6);
-        oled_write_P(PSTR("                    \n"), false);
-        oled_set_cursor(8, 7);
-        oled_write_P(PSTR("                    \n"), false);
+        // Draw stats on right side (64x64, columns 11-21) page by page
+        for (uint8_t page = 0; page < 8; page++) {
+            oled_set_cursor(11, page);
+            char line[11]; // 10 chars + null terminator
+            switch (page) {
+                case 0:
+                case 1:
+                    snprintf(line, sizeof(line), "          "); // Blank
+                    break;
+                case 2:
+                    snprintf(line, sizeof(line), "wpm:%03d  ", get_current_wpm());
+                    break;
+                case 3:
+                    snprintf(line, sizeof(line), "best:%03d ", wpm_personal_best);
+                    break;
+                case 4:
+                    snprintf(line, sizeof(line), "key:%s    ", last_keycode_str);
+                    break;
+                case 5: {
+                    uint8_t layer = get_highest_layer(layer_state);
+                    const char *layer_name;
+                    switch (layer) {
+                        case 0: layer_name = "top"; break;
+                        case 1: layer_name = "mod "; break;
+                        case 2: layer_name = "mos"; break;
+                        default: layer_name = "??? "; break;
+                    }
+                    snprintf(line, sizeof(line), "lyr:%s", layer_name);
+                    break;
+                }
+                default:
+                    snprintf(line, sizeof(line), "          "); // Blank
+                    break;
+            }
+            oled_write(line, page == 3); // Inverse for WPM line
+        }
 
     } else {
         // Other menus: Layer-specific key layouts
         uint8_t display_layer = (menu_mode - 1) / 2; // 1,2->0  3,4->1  5,6->2
         bool is_right_side = (menu_mode - 1) % 2;    // 1,3,5->left  2,4,6->right
 
-        // Add blank space as requested (removed layer number display)
-        oled_write_P(PSTR("                    \n"), false);
-        oled_write_P(PSTR("                    \n"), false);
-        oled_write_P(PSTR("                    \n"), false);
+        // set cursor to top-left
+        oled_set_cursor(0, 0);
 
         // Display layer information based on menu_mode
         if (display_layer == 0) { // Layer 0 layouts
             if (!is_right_side) { // Left side
-                oled_write_P(PSTR(
-                    "TB  Q   W  E  R   T \n"
-                    "ES  A   S  D  F   G \n"
-                    "LS  Z   X  C  V   B \n"
-                    "UI MO2 MO1 CT AT SPC\n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer0  left         "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("TB  Q   W  E  R   T  "), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("ES  A   S  D  F   G  "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("LS  Z   X  C  V   B  "), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("UI MO2 MO1 CT AT SPC "), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             } else { // Right side
-                oled_write_P(PSTR(
-                    "Y   U   I   O   P BS\n"
-                    "H   J   K   L   ;  '\n"
-                    "N   M   ,   .   / EN\n"
-                    "SPC MO1 MO2 APP - - \n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer0         right "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("Y   U   I   O   P BS "), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("H   J   K   L   ;  ' "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("N   M   ,   .   / EN "), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC MO1 MO2 APP - -  "), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             }
         } else if (display_layer == 1) { // Layer 1 layouts
             if (!is_right_side) { // Left side
-                oled_write_P(PSTR(
-                    "`   1   2  3  4   5 \n"
-                    "ES DEL BS EN HOM END\n"
-                    "LS PUP PDN C  V  TAB\n"
-                    "UI BR- BR+ CT AT SPC\n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer1  left         "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("`   1   2  3  4   5  "), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("ES DEL BS EN HOM END "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("LS PUP PDN C  V  TAB "), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("UI BR- BR+ CT AT SPC "), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             } else { // Right side
-                oled_write_P(PSTR(
-                    "6  7   8  9   0  BS \n"
-                    "\\  UP RT RCL [  ]  \n"
-                    "LT DN RAT RSH -  =  \n"
-                    "SPC -  - APP VO- VO+\n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer1         right "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("6  7   8  9   0  BS  "), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("\\   UP RT RCL [  ]   "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("LT DN RAT RSH -  =   "), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC -  - APP VO- VO+ "), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             }
         } else if (display_layer == 2) { // Layer 2 layouts
             if (!is_right_side) { // Left side
-                oled_write_P(PSTR(
-                    "F1  F2  F3  F4 F5 F6\n"
-                    "ESC DEL BPC ENT - - \n"
-                    "LSH PUP PDN C V  HOM\n"
-                    "GUiAGN AGS CT AT END\n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer2  left         "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("F1  F2  F3  F4 F5  F6"), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("ESC DEL BPC ENT -  - "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("LSH PUP PDN C  V  HOM"), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("GUI AGN AGS CT AT END"), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             } else { // Right side
-                oled_write_P(PSTR(
-                    "F7 F8 F9 F10 F11 F12\n"
-                    "- MSU MSR LMB WHU BS\n"
-                    "MSL MSD - RMB WHD EN\n"
-                    "SPC -  - DBG RBT BOT\n"
-                ), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR("layer2         right "), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("F7  F8 F9 F10 F11 F12"), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("-  MSU MSR LMB WHU BS"), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("MSL MSD -  RMB WHD EN"), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC -   - DBG RBT BOT"), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
             }
         }
+
+        // Force render to ensure buffer is flushed
+        oled_render();
     }
 
     return false; // Don't continue with default OLED task
