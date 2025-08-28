@@ -21,7 +21,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
         KC_ESC,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_ENT,
-        KC_LGUI, MO(2),   MO(1),   KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  MO(1),   MO(2),   KC_APP,  MENU_PREV, MENU_NEXT
+        KC_LCTL, MO(1),   KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  TG(1),   TG(2),   KC_APP,  MENU_PREV, MENU_NEXT
     ),
 
     // Layer 1: Numbers, navigation, and symbols
@@ -29,15 +29,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
         KC_ESC,  KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  KC_BSLS, KC_UP,   KC_RGHT, KC_RCTL, KC_LBRC, KC_RBRC,
         KC_LSFT, KC_PGUP, KC_PGDN, KC_C,    KC_V,    KC_TAB,  KC_LEFT, KC_DOWN, KC_RALT, KC_RSFT, KC_MINS, KC_EQL,
-        KC_LGUI, KC_BRID, KC_BRIU, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  KC_TRNS, KC_TRNS, KC_APP,  KC_VOLD, KC_VOLU
+        KC_BRID, KC_BRIU, KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  KC_TRNS, KC_TRNS, KC_APP,  KC_VOLD, KC_VOLU
     ),
 
     // Layer 2: Function keys, mouse control, and system functions
     [2] = LAYOUT(
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-        KC_ESC,  KC_DEL,  KC_BSPC, KC_ENT,  KC_NO,   KC_NO,   KC_NO,   MS_UP,   MS_RGHT, MS_BTN1, MS_WHLU, KC_BSPC,
-        KC_LSFT, KC_PGUP, KC_PGDN, KC_C,    KC_V,    KC_HOME, MS_LEFT, MS_DOWN, KC_NO,   MS_BTN2, MS_WHLD, KC_ENT,
-        KC_LGUI, AG_NORM, AG_SWAP, KC_LCTL, KC_LALT, KC_END,  KC_SPC,  KC_TRNS, KC_TRNS, DB_TOGG, QK_RBT,  QK_BOOT
+        KC_ESC,  KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  MS_BTN5, MS_UP,   MS_RGHT, MS_BTN1, MS_WHLU, KC_BSPC,
+        KC_LSFT, KC_PGUP, KC_PGDN, KC_C,    KC_V,    MS_BTN4, MS_LEFT, MS_DOWN, MS_BTN3,  MS_BTN2, MS_WHLD, KC_ENT,
+        AG_NORM, AG_SWAP, KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  KC_TRNS, KC_TRNS, DB_TOGG, QK_RBT,  QK_BOOT
     )
 };
 
@@ -81,6 +81,53 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return true;
 }
 
+// Small lookup for non-alphanumeric keys
+typedef struct {
+    uint16_t code;
+    const char *name;
+} keymap_t;
+
+// array of keycode to string mappings for special keys
+static const keymap_t keymap_table[] = {
+    {KC_0, "0"},   {KC_SPC, "spc"}, {KC_ENT, "ent"},
+    {KC_BSPC, "bsp"}, {KC_COMM, ","}, {KC_DOT, "."},
+    {KC_SLSH, "/"}, {KC_TAB, "tab"}, {KC_ESC, "esc"},
+    {KC_LCTL, "ctl"}, {KC_LSFT, "sft"}, {KC_LALT, "alt"},
+    {KC_LGUI, "gui"}, {KC_PGUP, "pgu"}, {KC_PGDN, "pgd"},
+    {KC_HOME, "hom"}, {KC_END, "end"}, {KC_DEL, "del"},
+    {MS_UP, "mu+"}, {MS_DOWN, "mu-"}, {MS_LEFT, "m<-"},
+    {MS_RGHT, "m->"}, {KC_MS_BTN1, "mbl"}, {KC_MS_BTN2, "mbr"},
+    {KC_MS_BTN3, "mbm"}, {KC_MS_BTN4, "bac"}, {KC_MS_BTN5, "fow"},
+    {KC_RIGHT, "rgt"}, {KC_LEFT, "lft"}, {KC_UP, "up"},
+    {KC_DOWN, "dwn"},
+};
+
+// Convert keycode to string for display
+static const char *keycode_to_str(uint16_t keycode) {
+    static char buf[2];
+
+    // Handle alphabetic keys directly
+    if (KC_A <= keycode && keycode <= KC_Z) {
+        buf[0] = 'a' + (keycode - KC_A);
+        buf[1] = 0;
+        return buf;
+    }
+    // Handle number keys directly
+    if (KC_1 <= keycode && keycode <= KC_9) {
+        buf[0] = '1' + (keycode - KC_1);
+        buf[1] = 0;
+        return buf;
+    }
+    // Handle '0' key directly
+    for (size_t i = 0; i < sizeof(keymap_table)/sizeof(keymap_table[0]); i++) {
+        if (keymap_table[i].code == keycode) {
+            return keymap_table[i].name;
+        }
+    }
+    // Default for unmapped keys
+    return "???";
+}
+
 // Key press tracking for OLED display
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
@@ -103,43 +150,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             wpm_tracking_started = true;
         }
 
-        // Convert keycode to string for display
-        switch (keycode) {
-            case KC_A ... KC_Z:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "%c", 'A' + (keycode - KC_A));
-                break;
-            case KC_1 ... KC_9:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "%c", '1' + (keycode - KC_1));
-                break;
-            case KC_0:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "0");
-                break;
-            case KC_SPACE:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "SPC");
-                break;
-            case KC_ENTER:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "ENT");
-                break;
-            case KC_BACKSPACE:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "BSP");
-                break;
-            case KC_COMMA:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), ",");
-                break;
-            case KC_DOT:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), ".");
-                break;
-            default:
-                snprintf(last_keycode_str, sizeof(last_keycode_str), "???");
-                break;
-        }
+        snprintf(last_keycode_str, sizeof(last_keycode_str), "%s", keycode_to_str(keycode));
 
         // Set initial Dunk initial personal best WPM after 30 seconds from first keypress
         if (wpm_tracking_started && timer_elapsed32(first_keypress_time) >= 30000 && wpm_personal_best == 0) {
             wpm_personal_best = get_current_wpm();
-        }
         // Update personal best WPM normally after initial set
-        else if (wpm_tracking_started) {
+        } else if (wpm_tracking_started) {
             uint8_t current_wpm = get_current_wpm();
             if (current_wpm > wpm_personal_best) {
                 wpm_personal_best = current_wpm;
@@ -352,7 +369,15 @@ bool oled_task_user(void) {
         // Main menu: Animated (left 64px) + stats (right 64px)
         static uint8_t current_frame = 0;
         static uint32_t last_frame_time = 0;
-        const uint32_t frame_interval = 100; // 100ms per frame
+
+        // Calculate frame interval based on WPM (100ms at 0 WPM, 50ms at 70+ WPM)
+        uint8_t wpm = get_current_wpm();
+        uint32_t frame_interval;
+        if (wpm >= 70) {
+            frame_interval = 50; // Cap at 50ms for 70+ WPM
+        } else {
+            frame_interval = 100 - (wpm * 50 / 70); // Linear from 100ms (0 WPM) to 50ms (70 WPM)
+        }
 
         // Update animation frame
         if (timer_elapsed32(last_frame_time) > frame_interval) {
@@ -366,6 +391,9 @@ bool oled_task_user(void) {
             oled_write_raw_P(image_frames[current_frame] + (page * 64), 64);
         }
 
+        // Determine if stats should be inverted based on layer
+        bool stats_inverted = (get_highest_layer(layer_state) != 0);
+
         // Draw stats on right side (64x64, columns 11-21) page by page
         for (uint8_t page = 0; page < 8; page++) {
             oled_set_cursor(11, page);
@@ -376,10 +404,10 @@ bool oled_task_user(void) {
                     snprintf(line, sizeof(line), "          "); // Blank
                     break;
                 case 2:
-                    snprintf(line, sizeof(line), "wpm:%03d  ", get_current_wpm());
+                    snprintf(line, sizeof(line), "wpm:%03d   ", get_current_wpm());
                     break;
                 case 3:
-                    snprintf(line, sizeof(line), "best:%03d ", wpm_personal_best);
+                    snprintf(line, sizeof(line), "bst:%03d   ", wpm_personal_best);
                     break;
                 case 4:
                     snprintf(line, sizeof(line), "key:%s    ", last_keycode_str);
@@ -388,10 +416,10 @@ bool oled_task_user(void) {
                     uint8_t layer = get_highest_layer(layer_state);
                     const char *layer_name;
                     switch (layer) {
-                        case 0: layer_name = "top"; break;
-                        case 1: layer_name = "mod "; break;
-                        case 2: layer_name = "mos"; break;
-                        default: layer_name = "??? "; break;
+                        case 0: layer_name = "normal"; break;
+                        case 1: layer_name = "modif "; break;
+                        case 2: layer_name = "mouse "; break;
+                        default: layer_name = "??????"; break;
                     }
                     snprintf(line, sizeof(line), "lyr:%s", layer_name);
                     break;
@@ -400,7 +428,7 @@ bool oled_task_user(void) {
                     snprintf(line, sizeof(line), "          "); // Blank
                     break;
             }
-            oled_write(line, page == 3); // Inverse for WPM line
+            oled_write(line, stats_inverted); // Inversed for non -default layers
         }
 
     } else {
@@ -414,57 +442,57 @@ bool oled_task_user(void) {
         // Display layer information based on menu_mode
         if (display_layer == 0) { // Layer 0 layouts
             if (!is_right_side) { // Left side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer0  left         "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("TB  Q   W  E  R   T  "), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("ES  A   S  D  F   G  "), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("LS  Z   X  C  V   B  "), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("UI MO2 MO1 CT AT SPC "), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|<-normal left      |"), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("tb   q  w  e  r   t  "), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("es   a  s  d  f   g  "), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("ls   z  x  c  v   b  "), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("ct  mo1 ui ct at spc "), false);
             } else { // Right side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer0         right "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("Y   U   I   O   P BS "), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("H   J   K   L   ;  ' "), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("N   M   ,   .   / EN "), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC MO1 MO2 APP - -  "), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), false);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|  normal    right->|"), false);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), false);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("y   u   i   o   p  bs"), false);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("h   j   k   l   ;   '"), false);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("n   m   ,   .   /  en"), false);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("spc tg1 tg2 app -  - "), false);
             }
         } else if (display_layer == 1) { // Layer 1 layouts
             if (!is_right_side) { // Left side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer1  left         "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("`   1   2  3  4   5  "), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("ES DEL BS EN HOM END "), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("LS PUP PDN C  V  TAB "), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("UI BR- BR+ CT AT SPC "), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|<-modif left       |"), true);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), true);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("`    1  2  3   4   5 "), true);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("es  del bs en hom end"), true);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("ls  pup pdn c  v  tab"), true);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("br- br+ ui ct at  spc"), true);
             } else { // Right side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer1         right "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("6  7   8  9   0  BS  "), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("\\   UP RT RCL [  ]   "), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("LT DN RAT RSH -  =   "), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC -  - APP VO- VO+ "), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|  modif     right->|"), true);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), true);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("6  7   8   9   0   bs"), true);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("\\  up rt  rcl  [   ] "), true);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("lt dn rat rsh  -   = "), true);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("spc -  -  app vo- vo+"), true);
             }
         } else if (display_layer == 2) { // Layer 2 layouts
             if (!is_right_side) { // Left side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer2  left         "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("F1  F2  F3  F4 F5  F6"), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("ESC DEL BPC ENT -  - "), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("LSH PUP PDN C  V  HOM"), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("GUI AGN AGS CT AT END"), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|<-mouse left       |"), true);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), true);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("f1  f2  f3  f4 f5  f6"), true);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("esc del bpc en hom ed"), true);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("lsh pup pdn c  v  bac"), true);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("agn ags gui ct at spc"), true);
             } else { // Right side
-                oled_set_cursor(0, 0); oled_write_P(PSTR("layer2         right "), false);
-                oled_set_cursor(0, 1); oled_write_P(PSTR("                     "), false);
-                oled_set_cursor(0, 2); oled_write_P(PSTR("F7  F8 F9 F10 F11 F12"), false);
-                oled_set_cursor(0, 3); oled_write_P(PSTR("-  MSU MSR LMB WHU BS"), false);
-                oled_set_cursor(0, 4); oled_write_P(PSTR("MSL MSD -  RMB WHD EN"), false);
-                oled_set_cursor(0, 5); oled_write_P(PSTR("SPC -   - DBG RBT BOT"), false);
-                oled_set_cursor(0, 6); oled_write_P(PSTR("                     "), false);
+                oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
+                oled_set_cursor(0, 1); oled_write_P(PSTR("|  mouse     right->|"), true);
+                oled_set_cursor(0, 2); oled_write_P(PSTR("'-------------------'"), true);
+                oled_set_cursor(0, 3); oled_write_P(PSTR("f7  f8 f9 f10 f11 f12"), true);
+                oled_set_cursor(0, 4); oled_write_P(PSTR("for msu msr lb whu bs"), true);
+                oled_set_cursor(0, 5); oled_write_P(PSTR("msl msd mib rb whd en"), true);
+                oled_set_cursor(0, 6); oled_write_P(PSTR("spc -   - dbg rbt bot"), true);
             }
         }
 
