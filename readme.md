@@ -23,8 +23,8 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | E6 | KC\_A    | KC\_D    | KC\_G    | KC\_J   | KC\_L    | KC\_QUOT |
 | B2 | KC\_LSFT | KC\_X    | KC\_V    | KC\_N   | KC\_COMM | KC\_SLSH |
 | B6 | KC\_Z    | KC\_C    | KC\_B    | KC\_M   | KC\_DOT  | KC\_ENT  |
-| B5 | KC\_LGUI | MO(1)    | KC\_LALT | KC\_SPC | MO(2)    | blank    |
-| B4 | MO(2)    | KC\_LCTL | KC\_SPC  | MO(1)   | KC\_APP  | blank    |
+| B5 | KC\_LCTL | KC\_LGUI | KC\_LALT | KC\_SPC | TG(2)    | blank    |
+| B4 | MO(1)    | KC\_LCTL | KC\_SPC  | TG(1)   | KC\_APP  | blank    |
 
 |layer 1| F4       | F5       | F6       | F7       | B1       | B3       |
 | -- | -------- | -------- | -------- | -------- | -------- | -------- |
@@ -34,8 +34,8 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | E6 | KC\_DEL  | KC\_ENT  | KC\_END  | KC\_UP   | KC\_RCTL | KC\_RBRC |
 | B2 | KC\_LSFT | KC\_PGDN | KC\_V    | KC\_LEFT | KC\_RALT | KC\_MINS |
 | B6 | KC\_PGUP | KC\_C    | KC\_TAB  | KC\_DOWN | KC\_RSFT | KC\_EQL  |
-| B5 | KC\_LGUI | KC\_BRIU | KC\_LALT | KC\_SPC  | KC\_TRNS | KC\_VOLD |
-| B4 | KC\_BRID | KC\_LCTL | KC\_SPC  | KC\_TRNS | KC\_APP  | KC\_VOLU |
+| B5 | KC\_BRID | KC\_LGUI | KC\_LALT | KC\_SPC  | KC\_TRNS | KC\_VOLD |
+| B4 | KC\_BRIU | KC\_LCTL | KC\_SPC  | KC\_TRNS | KC\_APP  | KC\_VOLU |
 
 |layer 2| F4       | F5       | F6       | F7       | B1       | B3       |
 | -- | -------- | -------- | -------- | -------- | -------- | -------- |
@@ -45,18 +45,22 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | E6 | KC\_DEL  | KC\_ENT  | KC\_NO   | MS\_UP   | MS\_BTN1 | KC\_BSPC |
 | B2 | KC\_LSFT | KC\_PGDN | KC\_V    | MS\_LEFT | KC\_NO   | MS\_WHLD |
 | B6 | KC\_PGUP | KC\_C    | KC\_HOME | MS\_DOWN | MS\_BTN2 | KC\_ENT  |
-| B5 | KC\_LGUI | AG\_SWAP | KC\_LALT | KC\_SPC  | KC\_TRNS | QK\_RBT  |
-| B4 | AG\_NORM | KC\_LCTL | KC\_END  | KC\_TRNS | DB\_TOGG | QK\_BOOT |
-
+| B5 | AG\_NORM | KC\_LGUI | KC\_LALT | KC\_SPC  | KC\_TRNS | QK\_RBT  |
+| B4 | AG\_SWAP | KC\_LCTL | KC\_END  | KC\_TRNS | DB\_TOGG | QK\_BOOT |
 
 
 ### Actual layout
-
-| KC_TAB  | KC_Q   | KC_W   | KC_E   | KC_R   | KC_T   | KC_Y   | KC_U   | KC_I   | KC_O   | KC_P   | KC_BSPC |
-|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|---------|
-| KC_ESC  | KC_A   | KC_S   | KC_D   | KC_F   | KC_G   | KC_H   | KC_J   | KC_K   | KC_L   | KC_SCLN| KC_QUOT |
-| KC_LSFT | KC_Z   | KC_X   | KC_C   | KC_V   | KC_B   | KC_N   | KC_M   | KC_COMM| KC_DOT | KC_SLSH| KC_ENT  |
-| KC_LGUI | MO(2)  | MO(1)  | KC_LCTL| KC_LALT| KC_SPC | KC_SPC | MO(1)  | MO(2)  | KC_APP | blank  | blank   |
+```
+           ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+           | TAB |  Q  |  W  |  E  |  R  |  T  |  Y  |  U  |  I  |  O  |  P  | BSPC|
+ ┌───────┐ ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+ │ 128x64│ | ESC |  A  |  S  |  D  |  F  |  G  |  H  |  J  |  K  |  L  | SCLN| QUOT|
+ └───────┘ ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+   ┌───┐   | LSH |  Z  |  X  |  C  |  V  |  B  |  N  |  M  |COMM | DOT |SLSH | ENT |
+   │ENC│   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+   └───┘   | LCTL| MO1 | LGUI| LCTL| LALT| SPC | SPC | TG1 | TG2 | APP |MNNXT|MNPRV|
+           └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+```
 
 ## Customizing the images/animations
 convert images/gif each frame to 64x64 to bytes array with [image2cpp](https://javl.github.io/image2cpp/)
