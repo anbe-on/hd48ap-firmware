@@ -79,16 +79,17 @@ and replace the array in `keymap.c`
 3. Clone this repo to qmk_firmware/keyboards/kasep
 4. cd qmk_firmware/keyboards/kasep/hd48ap
 5. run qmk compile -kb kasep/hd48ap -km default
-7. now you can flash the firmware with qmk toolbox or with avrdude
+7. now you can flash the firmware with qmk toolbox or on terminal
+   * first cd qmk_firmware/.build
    * with qmk toolbox, open the .hex file that was created in step 6 and flash it
-   * with avrdude, run this command (change the port accordingly):
+   * or on terminal:
      ```
-     avrdude -p atmega32u4 -P COM6 -U flash:w:kasep_hd48ap_default.hex:i
+     qmk flash kasep_hd48ap_default.hex
      ```
 
 ## Image byte editor
 
-i've created a simple image byte editor to make it easier to edit the image bytes array in imageEditor.py
+i've created a simple image byte editor to make it easier to edit the 64x64 image bytes array in imageEditor.py
 
 Install the required Python packages:
 
@@ -98,3 +99,5 @@ pip install flask
 # run it with:
 python imageEditor.py
 ```
+
+when saved it printed the frames directly into terminal that you can paste in the c code.
