@@ -79,6 +79,18 @@ and replace the array in `keymap.c`
    * with qmk toolbox, open the .hex file that was created in step 6 and flash it
    * with avrdude, run this command (change the port accordingly):
      ```
-     avrdude -p atmega32u4 -c avr109 -P /dev/ttyACM0 -b 57600 -U flash:w:hd48ap_default.hex
+     avrdude -p atmega32u4 -P COM6 -U flash:w:kasep_hd48ap_default.hex:i
      ```
 
+## Image byte editor
+
+i've created a simple image byte editor to make it easier to edit the image bytes array in imageEditor.py
+
+Install the required Python packages:
+
+```bash
+pip install flask
+
+# run it with:
+python imageEditor.py
+```
