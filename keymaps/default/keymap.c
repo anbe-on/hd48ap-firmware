@@ -63,18 +63,13 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
                 }
                 break;
 
-            case 2: { // Layer 2: Mouse speed control
-                static uint8_t speed_index = 1;  // start at medium (MS_ACL1)
-                const uint16_t speeds[] = { MS_ACL0, MS_ACL1, MS_ACL2 };
-
+            case 2: // Layer 2: Mouse scroll
                 if (clockwise) {
-                    if (speed_index < 2) speed_index++;
+                    tap_code(MS_WHLU);  // Scroll up when rotated right
                 } else {
-                    if (speed_index > 0) speed_index--;
+                    tap_code(MS_WHLD);  // Scroll down when rotated left
                 }
-                tap_code16(speeds[speed_index]);
                 break;
-            }
 
             default:
                 // For any other layers, fall back to volume control

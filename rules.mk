@@ -45,6 +45,10 @@ BACKLIGHT_ENABLE = no
 RGBLIGHT_ENABLE = no
 # No Bluetooth support needed
 BLUETOOTH_ENABLE = no
+# No RGB matrix support
+RGB_MATRIX_ENABLE = no
+# No LED matrix support
+LED_MATRIX_ENABLE = no
 
 # Disable advanced features that add latency or aren't needed
 # Disable Space Cadet Shift to avoid typing delays
