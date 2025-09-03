@@ -12,33 +12,32 @@ uint16_t wpm_personal_best = 0;  // Personal best WPM (resets on power cycle)
 char last_keycode_str[16] = "   "; // Last pressed key as string for display
 static uint32_t first_keypress_time = 0; // Timer for first keypress
 static bool wpm_tracking_started = false; // Flag for initial WPM tracking
-static uint8_t mouse_accel = 1; // Default mouse acceleration level (0-2)
 
 // Layer definitions matching the PCB layout (6 columns x 8 rows)
 // Each layer maps to the physical switch matrix as defined in keyboard.json
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Layer 0: Base layer - Standard QWERTY with modifications for compact layout
     [0] = LAYOUT(
-        KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
-        KC_ESC,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-        KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_ENT,
+        KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,      KC_BSPC,
+        KC_ESC,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN,   KC_QUOT,
+        KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,   KC_ENT,
         KC_LCTL, MO(1),   KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  TG(1),   TG(2),   KC_APP,  MENU_PREV, MENU_NEXT
     ),
 
     // Layer 1: Numbers, navigation, and symbols
     [1] = LAYOUT(
         KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
-        KC_ESC,  KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  KC_BSLS, KC_UP,   KC_RGHT, KC_RCTL, KC_LBRC, KC_RBRC,
-        KC_LSFT, KC_PGUP, KC_PGDN, KC_C,    KC_V,    KC_TAB,  KC_LEFT, KC_DOWN, KC_RALT, KC_RSFT, KC_MINS, KC_EQL,
-        KC_BRID, KC_BRIU, KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  KC_TRNS, KC_TRNS, KC_APP,  KC_VOLD, KC_VOLU
+        KC_TRNS, KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  KC_BSLS, KC_UP,   KC_RGHT, KC_RCTL, KC_LBRC, KC_RBRC,
+        KC_TRNS, KC_PGUP, KC_PGDN, KC_TRNS, KC_TRNS, KC_TAB,  KC_LEFT, KC_DOWN, KC_RALT, KC_RSFT, KC_MINS, KC_EQL,
+        KC_BRID, KC_BRIU, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_VOLD, KC_VOLU
     ),
 
     // Layer 2: Function keys, mouse control, and system functions
     [2] = LAYOUT(
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-        KC_ESC,  KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  MS_BTN5, MS_UP,   MS_RGHT, MS_BTN1, MS_WHLU, KC_BSPC,
-        KC_LSFT, KC_PGUP, KC_PGDN, KC_C,    KC_V,    MS_BTN4, MS_LEFT, MS_DOWN, MS_BTN3, MS_BTN2, MS_WHLD, KC_ENT,
-        AG_NORM, AG_SWAP, KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  KC_TRNS, KC_TRNS, DB_TOGG, QK_RBT,  QK_BOOT
+        KC_TRNS, KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  MS_BTN5, MS_UP,   MS_RGHT, MS_BTN1, MS_WHLU, KC_BSPC,
+        KC_TRNS, KC_PGUP, KC_PGDN, KC_TRNS, KC_TRNS, MS_BTN4, MS_LEFT, MS_DOWN, MS_BTN3, MS_BTN2, MS_WHLD, KC_ENT,
+        AG_NORM, AG_SWAP, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, DB_TOGG, QK_RBT,  QK_BOOT
     )
 };
 
@@ -64,15 +63,18 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
                 }
                 break;
 
-            case 2: // Layer 2: Mouse speed control
+            case 2: { // Layer 2: Mouse speed control
+                static uint8_t speed_index = 1;  // start at medium (MS_ACL1)
+                const uint16_t speeds[] = { MS_ACL0, MS_ACL1, MS_ACL2 };
+
                 if (clockwise) {
-                    // Increase mouse speed (mouse_move_delta)
-                    if (mouse_accel < 2) mouse_accel++;
+                    if (speed_index < 2) speed_index++;
                 } else {
-                    // Decrease mouse speed (mouse_move_delta)
-                    if (mouse_accel < 2) mouse_accel++;
+                    if (speed_index > 0) speed_index--;
                 }
+                tap_code16(speeds[speed_index]);
                 break;
+            }
 
             default:
                 // For any other layers, fall back to volume control
@@ -463,7 +465,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("es   a  s  d  f   g  "), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("ls   z  x  c  v   b  "), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("ct  mo1 ui ct at spc "), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("<========            "), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("...                  "), true);
             } else { // Right side
                 oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
                 oled_set_cursor(0, 1); oled_write_P(PSTR("|  normal    right->|"), true);
@@ -472,7 +474,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("h   j   k   l   ;   '"), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("n   m   ,   .   /  en"), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("spc tg1 tg2 app -  - "), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("             =======>"), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("                  ..."), true);
             }
         } else if (display_layer == 1) { // Layer 1 layouts
             if (!is_right_side) { // Left side
@@ -483,7 +485,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("es  del bs en hom end"), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("ls  pup pdn c  v  tab"), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("br- br+ ui ct at  spc"), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("<========            "), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("...                  "), true);
             } else { // Right side
                 oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
                 oled_set_cursor(0, 1); oled_write_P(PSTR("|  editor    right->|"), true);
@@ -492,7 +494,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("\\  up rt  rcl  [   ] "), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("lt dn rat rsh  -   = "), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("spc -  -  app vo- vo+"), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("             =======>"), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("                  ..."), true);
             }
         } else if (display_layer == 2) { // Layer 2 layouts
             if (!is_right_side) { // Left side
@@ -503,7 +505,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("esc del bpc en hom ed"), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("lsh pup pdn c  v  bac"), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("agn ags gui ct at spc"), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("<========            "), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("...                  "), true);
             } else { // Right side
                 oled_set_cursor(0, 0); oled_write_P(PSTR(".-------------------."), true);
                 oled_set_cursor(0, 1); oled_write_P(PSTR("|  mouse     right->|"), true);
@@ -512,7 +514,7 @@ bool oled_task_user(void) {
                 oled_set_cursor(0, 4); oled_write_P(PSTR("for msu msr lb whu bs"), true);
                 oled_set_cursor(0, 5); oled_write_P(PSTR("msl msd mib rb whd en"), true);
                 oled_set_cursor(0, 6); oled_write_P(PSTR("spc -   - dbg rbt bot"), true);
-                oled_set_cursor(0, 7); oled_write_P(PSTR("             =======>"), true);
+                oled_set_cursor(0, 7); oled_write_P(PSTR("                  ..."), true);
             }
         }
 

@@ -30,8 +30,11 @@
 // Layer 0: Volume control, Layer 1: Brightness control, Layer 2: Reserved for future use
 #define ENCODER_RESOLUTION 4  // 4 pulses per detent for standard rotary encoder
 
+// Mouse acceleration levels (0: slow, 1: medium, 2: fast)
+#define MK_3_SPEED
+
 // Last key pressed tracking for OLED display
-#define LAST_KEY_BUFFER_SIZE 16  // Store last 16 characters for display
+#define LAST_KEY_BUFFER_SIZE 1  // Store last key presses for display
 
 // Personal best WPM tracking (resets on power cycle)
 // Will be stored in RAM, not EEPROM to avoid wear
