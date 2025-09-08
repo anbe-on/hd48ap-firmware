@@ -16,7 +16,7 @@ static bool wpm_tracking_started = false; // Flag for initial WPM tracking
 // Layer definitions matching the PCB layout (6 columns x 8 rows)
 // Each layer maps to the physical switch matrix as defined in keyboard.json
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    // Layer 0: Base layer - Standard QWERTY with modifications for compact layout
+    // Layer 0: Base layer - Standard QWERTY
     [0] = LAYOUT(
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,      KC_BSPC,
         KC_ESC,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN,   KC_QUOT,
@@ -24,12 +24,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LCTL, MO(1),   KC_LGUI, KC_LCTL, KC_LALT, KC_SPC,  KC_SPC,  TG(1),   TG(2),   KC_APP,  MENU_PREV, MENU_NEXT
     ),
 
-    // Layer 1: Numbers, navigation, and symbols
+    // Layer 1: Numbers, navigation, and system controls
     [1] = LAYOUT(
         KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
         KC_TRNS, KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  KC_BSLS, KC_UP,   KC_RGHT, KC_RCTL, KC_LBRC, KC_RBRC,
         KC_TRNS, KC_PGUP, KC_PGDN, KC_TRNS, KC_TRNS, KC_TAB,  KC_LEFT, KC_DOWN, KC_RALT, KC_RSFT, KC_MINS, KC_EQL,
-        KC_BRID, KC_BRIU, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_VOLD, KC_VOLU
+        KC_BRID, KC_BRIU, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TO(0),   TO(0),   KC_TRNS, KC_VOLD, KC_VOLU
     ),
 
     // Layer 2: Function keys, mouse control, and system functions
@@ -37,7 +37,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
         KC_TRNS, KC_DEL,  KC_BSPC, KC_ENT,  KC_HOME, KC_END,  MS_BTN5, MS_UP,   MS_RGHT, MS_BTN1, MS_WHLU, KC_BSPC,
         KC_TRNS, KC_PGUP, KC_PGDN, KC_TRNS, KC_TRNS, MS_BTN4, MS_LEFT, MS_DOWN, MS_BTN3, MS_BTN2, MS_WHLD, KC_ENT,
-        AG_NORM, AG_SWAP, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, DB_TOGG, QK_RBT,  QK_BOOT
+        AG_NORM, AG_SWAP, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TO(0),   TO(0),   DB_TOGG, QK_RBT,  QK_BOOT
     )
 };
 
@@ -368,6 +368,8 @@ static const char PROGMEM image_frames[][512] = {
 // OLED display task - Shows different content based on menu_mode
 bool oled_task_user(void) {
     static uint8_t prev_menu_mode = 255; // Initial invalid value to force clear on start
+    static bool blink_state = false; // Tracks blinking state for Layer 2
+    static uint32_t last_blink_time = 0; // Tracks last blink toggle time
 
     if (menu_mode != prev_menu_mode) {
         oled_clear(); // Clear the display buffer on menu mode change to avoid leftovers
@@ -401,7 +403,22 @@ bool oled_task_user(void) {
         }
 
         // Determine if stats should be inverted based on layer
-        bool stats_inverted = (get_highest_layer(layer_state) != 0);
+        uint8_t layer = get_highest_layer(layer_state);
+        bool stats_inverted;
+        if (layer == 0) {
+            stats_inverted = false; // Dark background for Layer 0
+        } else if (layer == 1) {
+            stats_inverted = true; // White background for Layer 1
+        } else if (layer == 2) {
+            // Toggle blink_state every with timing stated below for Layer 2
+            if (timer_elapsed32(last_blink_time) > 100) {
+                blink_state = !blink_state;
+                last_blink_time = timer_read32();
+            }
+            stats_inverted = blink_state; // Blinking effect for Layer 2
+        } else {
+            stats_inverted = true; // Default to inverted for other layers
+        }
 
         // Draw stats on right side (64x64, columns 11-21) page by page
         for (uint8_t page = 0; page < 8; page++) {
@@ -437,7 +454,7 @@ bool oled_task_user(void) {
                     snprintf(line, sizeof(line), "          "); // Blank
                     break;
             }
-            oled_write(line, stats_inverted); // Inverted for non-default layers
+            oled_write(line, stats_inverted); // Apply inversion based on layer
         }
 
     } else {
