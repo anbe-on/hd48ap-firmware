@@ -411,7 +411,7 @@ bool oled_task_user(void) {
             stats_inverted = true; // White background for Layer 1
         } else if (layer == 2) {
             // Toggle blink_state every with timing stated below for Layer 2
-            if (timer_elapsed32(last_blink_time) > 100) {
+            if (timer_elapsed32(last_blink_time) > 500) {
                 blink_state = !blink_state;
                 last_blink_time = timer_read32();
             }

@@ -34,8 +34,8 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | E6 | KC\_DEL  | KC\_ENT  | KC\_END  | KC\_UP   | KC\_RCTL | KC\_RBRC |
 | B2 | KC\_LSFT | KC\_PGDN | KC\_V    | KC\_LEFT | KC\_RALT | KC\_MINS |
 | B6 | KC\_PGUP | KC\_C    | KC\_TAB  | KC\_DOWN | KC\_RSFT | KC\_EQL  |
-| B5 | KC\_BRID | KC\_LGUI | KC\_LALT | KC\_SPC  | KC\_TRNS | KC\_VOLD |
-| B4 | KC\_BRIU | KC\_LCTL | KC\_SPC  | KC\_TRNS | KC\_APP  | KC\_VOLU |
+| B5 | KC\_BRID | KC\_LGUI | KC\_LALT | KC\_SPC  | T0(0)    | KC\_VOLD |
+| B4 | KC\_BRIU | KC\_LCTL | KC\_SPC  | T0(0)    | KC\_APP  | KC\_VOLU |
 
 |layer 2| F4       | F5       | F6       | F7       | B1       | B3       |
 | -- | -------- | -------- | -------- | -------- | -------- | -------- |
@@ -45,8 +45,8 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
 | E6 | KC\_DEL  | KC\_ENT  | KC\_NO   | MS\_UP   | MS\_BTN1 | KC\_BSPC |
 | B2 | KC\_LSFT | KC\_PGDN | KC\_V    | MS\_LEFT | KC\_NO   | MS\_WHLD |
 | B6 | KC\_PGUP | KC\_C    | KC\_HOME | MS\_DOWN | MS\_BTN2 | KC\_ENT  |
-| B5 | AG\_NORM | KC\_LGUI | KC\_LALT | KC\_SPC  | KC\_TRNS | QK\_RBT  |
-| B4 | AG\_SWAP | KC\_LCTL | KC\_END  | KC\_TRNS | DB\_TOGG | QK\_BOOT |
+| B5 | AG\_NORM | KC\_LGUI | KC\_LALT | KC\_SPC  | T0(0)    | QK\_RBT  |
+| B4 | AG\_SWAP | KC\_LCTL | KC\_END  | T0(0)    | DB\_TOGG | QK\_BOOT |
 
 
 ### Actual layout
@@ -54,17 +54,13 @@ this keyboard has different matrix wiring, instead of 12x4 ortholinear it has 6x
            ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
            | TAB |  Q  |  W  |  E  |  R  |  T  |  Y  |  U  |  I  |  O  |  P  | BSPC|
  ┌───────┐ ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
- │ 128x64│ | ESC |  A  |  S  |  D  |  F  |  G  |  H  |  J  |  K  |  L  | SCLN| QUOT|
+ │ 128x64│ | ESC |  A  |  S  |  D  |  F  |  G  |  H  |  J  |  K  |  L  | ;   | '   |
  └───────┘ ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-   ┌───┐   | LSH |  Z  |  X  |  C  |  V  |  B  |  N  |  M  |COMM | DOT |SLSH | ENT |
+   ┌───┐   | LSH |  Z  |  X  |  C  |  V  |  B  |  N  |  M  | ,   | .   | /xx | ENT |
    │ENC│   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
    └───┘   | LCTL| MO1 | LGUI| LCTL| LALT| SPC | SPC | TG1 | TG2 | APP |MNNXT|MNPRV|
            └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
 ```
-
-## Customizing the images/animations
-convert images/gif each frame to 64x64 to bytes array with [image2cpp](https://javl.github.io/image2cpp/)
-and replace the array in `keymap.c`
 
 ## Bootloader
 
@@ -74,22 +70,26 @@ and replace the array in `keymap.c`
 
 ## Compiling and Flashing the firmware
 
-1. Install [QMK Firmware](https://docs.qmk.fm/#/newbs_getting_started) on your computer.
+1. Install [QMK Firmware](https://docs.qmk.fm/#/newbs_getting_started).
 2. Create a directory named `kasep` in `qmk_firmware/keyboards/`.
 3. Clone this repo to qmk_firmware/keyboards/kasep
 4. cd qmk_firmware/keyboards/kasep/hd48ap
-5. run qmk compile -kb kasep/hd48ap -km default
+5. run ```qmk compile -kb kasep/hd48ap -km default```
 7. now you can flash the firmware with qmk toolbox or on terminal
    * first cd qmk_firmware/.build
-   * with qmk toolbox, open the .hex file that was created in step 6 and flash it
+   * with qmk toolbox, open the .hex file qmk_firmware/.build and then flash it
    * or on terminal:
      ```
      qmk flash kasep_hd48ap_default.hex
      ```
 
+## Customizing the images/animations
+convert images/gif each frame to 64x64 to bytes array with [image2cpp](https://javl.github.io/image2cpp/)
+and replace the byte image image_frames in `keymap.c`
+
 ## Image byte editor
 
-i've created a simple image byte editor to make it easier to edit the 64x64 image bytes array in imageEditor.py
+i've created a simple image byte editor to make it easier to edit the 64x64 image bytes array in imageEditor.py, it will loads the byte image automatically from the image_frames in keymap.c. 
 
 Install the required Python packages:
 
@@ -100,4 +100,4 @@ pip install flask
 python imageEditor.py
 ```
 
-when saved it printed the frames directly into terminal that you can paste in the c code.
+when saved it printed the frames directly into terminal that you can paste manually in the c code.
